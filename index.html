@@ -184,9 +184,9 @@
     </main>
 
     <div class="social-float">
-        <a href="https://wa.me/" target="_blank" class="wa" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
-        <a href="https://tiktok.com/" target="_blank" class="tk" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
-        <a href="https://instagram.com/" target="_blank" class="ig" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a id="social-wa" href="https://wa.me/" target="_blank" class="wa" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+        <a id="social-tk" href="https://tiktok.com/" target="_blank" class="tk" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+        <a id="social-ig" href="https://instagram.com/" target="_blank" class="ig" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
     </div>
 
     <button class="fab admin-only" onclick="openPropertyForm()" title="Añadir propiedad"><i class="fa-solid fa-plus"></i></button>
@@ -238,14 +238,25 @@
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="form-label" for="form-price">Precio</label><input type="text" id="form-price" class="form-input" placeholder="Ej: 120000" required></div>
+                <div><label class="form-label" for="form-price">Precio <span class="text-xs font-normal" style="color:var(--text-muted);">(opcional)</span></label><input type="text" id="form-price" class="form-input" placeholder="Ej: 120000"></div>
                 <div><label class="form-label" for="form-currency">Moneda</label><select id="form-currency" class="form-input form-select"><option value="USD">USD</option><option value="ARS">ARS</option><option value="EUR">EUR</option></select></div>
+            </div>
+            <div id="promo-section" style="display:none;" class="rounded-xl p-4 bg-amber-50 border border-amber-200 mb-4">
+                <label class="flex items-center gap-2 cursor-pointer mb-3">
+                    <input type="checkbox" id="form-promo-active" onchange="document.getElementById('promo-price-field').style.display=this.checked?'block':'none'">
+                    <span class="text-sm font-bold text-amber-900"><i class="fa-solid fa-tag mr-1"></i>Activar Precio Promocional</span>
+                </label>
+                <div id="promo-price-field" style="display:none;">
+                    <label class="form-label" for="form-promo-price">Precio con descuento</label>
+                    <input type="text" id="form-promo-price" class="form-input" placeholder="Ej: 95000">
+                </div>
             </div>
             <div class="grid grid-cols-3 gap-3">
                 <div><label class="form-label" for="form-beds"><i class="fa-solid fa-bed mr-1"></i>Hab.</label><input type="number" id="form-beds" class="form-input" min="0" value="1"></div>
                 <div><label class="form-label" for="form-baths"><i class="fa-solid fa-bath mr-1"></i>Baños</label><input type="number" id="form-baths" class="form-input" min="0" value="1"></div>
                 <div><label class="form-label" for="form-guests"><i class="fa-solid fa-user-group mr-1"></i>Huéspedes</label><input type="number" id="form-guests" class="form-input" min="1" value="2"></div>
             </div>
+            <div><label class="form-label" for="form-parking"><i class="fa-solid fa-car mr-1"></i>Parqueadero</label><select id="form-parking" class="form-input form-select"><option value="">No</option><option value="1 carro">1 carro</option><option value="2 carros">2 carros</option></select></div>
             <div>
                 <label class="form-label"><i class="fa-solid fa-images mr-1"></i>Imágenes</label>
                 <div id="upload-area" class="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition" style="border-color:var(--border);background:var(--bg);" onclick="document.getElementById('file-input').click()">
@@ -534,8 +545,8 @@ function renderProperties() {
             '<h3 class="font-display font-bold text-lg text-stone-900 leading-tight flex-1 cursor-pointer hover:text-amber-800" onclick="viewDetail(\'' + p.id + '\')">' + esc(p.name) + '</h3>' +
             '<div class="flex gap-1 flex-shrink-0 admin-only"><button onclick="editProperty(\'' + p.id + '\')" class="btn-icon" style="width:32px;height:32px;font-size:0.75rem;" title="Editar"><i class="fa-solid fa-pen"></i></button><button onclick="requestDelete(\'' + p.id + '\')" class="btn-icon danger" style="width:32px;height:32px;font-size:0.75rem;" title="Eliminar"><i class="fa-solid fa-trash"></i></button></div></div>' +
             '<p class="text-xs mb-3 flex items-center gap-1.5" style="color:var(--text-muted);"><i class="fa-solid fa-location-dot" style="color:var(--accent);"></i>' + [p.building, p.floor ? 'Piso '+p.floor : '', aptNum(p.apt) ? 'Depto '+aptNum(p.apt) : ''].filter(Boolean).join(' \u00b7 ') + '</p>' +
-            (p.price ? '<div class="flex items-baseline gap-1 mb-4"><span class="font-display font-bold text-2xl" style="color:var(--accent);">' + currencySymbol + Number(p.price).toLocaleString('es') + '</span><span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-muted);">' + priceLabel + '</span></div>' : '') +
-            '<div class="flex gap-4 mb-4 text-xs font-medium text-stone-600">' + (p.beds ? '<span><i class="fa-solid fa-bed mr-1 text-amber-800"></i>' + p.beds + ' Hab.</span>' : '') + (p.baths ? '<span><i class="fa-solid fa-bath mr-1 text-amber-800"></i>' + p.baths + ' Ba\u00f1os</span>' : '') + (p.guests ? '<span><i class="fa-solid fa-user-group mr-1 text-amber-800"></i>' + p.guests + ' Hu\u00e9spedes</span>' : '') + '</div>' +
+            (p.price ? '<div class="flex items-baseline gap-1 mb-4">' + (p.promoActive && p.promoPrice ? '<span class="font-display font-bold text-2xl" style="color:var(--accent);">' + currencySymbol + Number(p.promoPrice).toLocaleString('es') + '</span><span class="text-xs line-through font-semibold" style="color:var(--text-muted);">' + currencySymbol + Number(p.price).toLocaleString('es') + '</span>' : '<span class="font-display font-bold text-2xl" style="color:var(--accent);">' + currencySymbol + Number(p.price).toLocaleString('es') + '</span>') + '<span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-muted);">' + priceLabel + '</span></div>' : '<div class="mb-4"><span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-muted);">Consultar precio</span></div>') +
+            '<div class="flex gap-4 mb-4 text-xs font-medium text-stone-600">' + (p.beds ? '<span><i class="fa-solid fa-bed mr-1 text-amber-800"></i>' + p.beds + ' Hab.</span>' : '') + (p.baths ? '<span><i class="fa-solid fa-bath mr-1 text-amber-800"></i>' + p.baths + ' Ba\u00f1os</span>' : '') + (p.guests ? '<span><i class="fa-solid fa-user-group mr-1 text-amber-800"></i>' + p.guests + ' Hu\u00e9spedes</span>' : '') + (p.parking ? '<span><i class="fa-solid fa-car mr-1 text-amber-800"></i>' + p.parking + '</span>' : '') + '</div>' +
             (amenities.length > 0 ? '<div class="flex flex-wrap gap-1 mb-4">' + amenities.map(function(a) { return '<span class="text-[10px] px-2 py-1 rounded bg-stone-100 font-medium text-stone-600">' + esc(a.trim()) + '</span>'; }).join('') + (hasMore ? '<span class="text-[10px] px-2 py-1 rounded bg-amber-50 font-bold text-amber-800">+ M\u00e1s</span>' : '') + '</div>' : '') + '</div>' +
             '<div class="flex gap-2 pt-3 border-t" style="border-color:var(--border);"><button onclick="viewDetail(\'' + p.id + '\')" class="btn-sm flex-1 bg-stone-100 hover:bg-stone-200 text-stone-800"><i class="fa-solid fa-eye mr-1.5"></i>Ver</button>' +
             '</div></div></div>';
@@ -585,7 +596,7 @@ function viewDetail(id) {
         '<h2 class="font-display text-2xl sm:text-3xl font-extrabold text-stone-900">' + esc(p.name) + '</h2>' +
         '<div class="flex gap-1 flex-shrink-0 admin-only"><button onclick="editProperty(\'' + p.id + '\');closeModal(\'modal-detail\');" class="btn-icon" style="width:34px;height:34px;" title="Editar"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="closeModal(\'modal-detail\');requestDelete(\'' + p.id + '\');" class="btn-icon danger" style="width:34px;height:34px;" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button></div></div>' +
         '<p class="text-sm text-stone-500"><i class="fa-solid fa-location-dot mr-1.5" style="color:var(--accent);"></i>' + [p.building, p.floor ? 'Piso '+p.floor : '', aptNum(p.apt) ? 'Depto '+aptNum(p.apt) : ''].filter(Boolean).join(' \u00b7 ') + '</p></div>' +
-        (p.price ? '<div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl" style="background:var(--bg-alt);"><div class="flex items-baseline gap-1"><span class="font-display font-bold text-3xl text-stone-900">' + currencySymbol + Number(p.price).toLocaleString('es') + '</span><span class="text-xs font-bold uppercase text-stone-500">' + priceLabel + '</span></div><div class="flex gap-4 text-sm font-semibold text-stone-700">' + (p.beds ? '<span><i class="fa-solid fa-bed mr-1 text-amber-800"></i>' + p.beds + ' Hab.</span>' : '') + (p.baths ? '<span><i class="fa-solid fa-bath mr-1 text-amber-800"></i>' + p.baths + ' Ba\u00f1os</span>' : '') + (p.guests ? '<span><i class="fa-solid fa-user-group mr-1 text-amber-800"></i>' + p.guests + ' Hu\u00e9spedes</span>' : '') + '</div></div>' : '') +
+        (p.price ? '<div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl" style="background:var(--bg-alt);"><div class="flex items-baseline gap-1">' + (p.promoActive && p.promoPrice ? '<div><span class="font-display font-bold text-3xl text-stone-900">' + currencySymbol + Number(p.promoPrice).toLocaleString('es') + '</span><span class="text-xs font-bold uppercase text-stone-500 ml-1">' + priceLabel + '</span></div><div><span class="text-sm line-through text-stone-400">' + currencySymbol + Number(p.price).toLocaleString('es') + '</span></div></div>' : '<span class="font-display font-bold text-3xl text-stone-900">' + currencySymbol + Number(p.price).toLocaleString('es') + '</span><span class="text-xs font-bold uppercase text-stone-500">' + priceLabel + '</span></div>') + '<div class="flex gap-4 text-sm font-semibold text-stone-700">' + (p.beds ? '<span><i class="fa-solid fa-bed mr-1 text-amber-800"></i>' + p.beds + ' Hab.</span>' : '') + (p.baths ? '<span><i class="fa-solid fa-bath mr-1 text-amber-800"></i>' + p.baths + ' Ba\u00f1os</span>' : '') + (p.guests ? '<span><i class="fa-solid fa-user-group mr-1 text-amber-800"></i>' + p.guests + ' Hu\u00e9spedes</span>' : '') + (p.parking ? '<span><i class="fa-solid fa-car mr-1 text-amber-800"></i>' + p.parking + '</span>' : '') + '</div></div>' : '<div class="p-4 rounded-xl text-sm font-semibold text-stone-600" style="background:var(--bg-alt);">Consultar precio — cont\u00e1ctanos por WhatsApp</div>') +
         (p.description ? '<div><h4 class="font-display font-bold text-sm uppercase tracking-wider mb-2 text-stone-400">Descripci\u00f3n</h4><p class="text-sm leading-relaxed text-stone-600">' + esc(p.description) + '</p></div>' : '') +
         (amenities.length > 0 ? '<div><h4 class="font-display font-bold text-sm uppercase tracking-wider mb-2 text-stone-400">Amenities</h4><div class="flex flex-wrap gap-2">' + amenities.map(function(a) { return '<span class="text-xs px-3 py-1.5 rounded-full font-medium bg-stone-100 text-stone-700 border border-stone-200/50"><i class="fa-solid fa-circle-check mr-1.5 text-emerald-700"></i>' + esc(a.trim()) + '</span>'; }).join('') + '</div></div>' : '') +
         (p.notes ? '<div class="rounded-xl p-4 bg-amber-50 border border-amber-200/50"><h4 class="font-display font-bold text-sm text-amber-900 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-circle-info"></i> Notas</h4><p class="text-xs text-amber-800 leading-relaxed">' + esc(p.notes) + '</p></div>' : '') +
@@ -619,6 +630,11 @@ function openPropertyForm(id) {
         document.getElementById('form-apt').value = p.apt||'';
         document.getElementById('form-price').value = p.price||'';
         document.getElementById('form-currency').value = p.currency||'USD';
+        document.getElementById('form-promo-active').checked = !!p.promoActive;
+        document.getElementById('form-promo-price').value = p.promoPrice||'';
+        document.getElementById('promo-price-field').style.display = p.promoActive ? 'block' : 'none';
+        document.getElementById('promo-section').style.display = p.type === 'venta' ? 'block' : 'none';
+        document.getElementById('form-parking').value = p.parking||'';
         document.getElementById('form-beds').value = p.beds||1;
         document.getElementById('form-baths').value = p.baths||1;
         document.getElementById('form-guests').value = p.guests||2;
@@ -659,6 +675,11 @@ function editProperty(id) { openPropertyForm(id); }
 function onTypeChange() {
     var type = document.querySelector('input[name="form-type"]:checked');
     document.getElementById('corta-fields').style.display = type && type.value === 'corta' ? 'block' : 'none';
+    document.getElementById('promo-section').style.display = type && type.value === 'venta' ? 'block' : 'none';
+    if (type && type.value !== 'venta') {
+        document.getElementById('form-promo-active').checked = false;
+        document.getElementById('promo-price-field').style.display = 'none';
+    }
 }
 
 function handlePropertySubmit(e) {
@@ -692,6 +713,9 @@ function handlePropertySubmit(e) {
         welcome: document.getElementById('form-welcome').value.trim(),
         phone: document.getElementById('form-phone').value.trim(),
         email: document.getElementById('form-email').value.trim(),
+        parking: document.getElementById('form-parking').value,
+        promoActive: document.getElementById('form-promo-active').checked,
+        promoPrice: document.getElementById('form-promo-price').value.trim(),
         notes: document.getElementById('form-notes').value.trim(),
     };
     if (id) {
@@ -776,6 +800,15 @@ function openSettings() {
     openModal('modal-settings');
 }
 
+function updateSocialLinks() {
+    var wa = document.getElementById('social-wa');
+    if (wa && settings.whatsapp) wa.href = 'https://wa.me/' + settings.whatsapp.replace(/[^0-9]/g,'');
+    var tk = document.getElementById('social-tk');
+    if (tk && settings.tiktok) tk.href = 'https://tiktok.com/' + settings.tiktok;
+    var ig = document.getElementById('social-ig');
+    if (ig && settings.instagram) ig.href = 'https://instagram.com/' + settings.instagram.replace('@','');
+}
+
 function saveSettings() {
     settings.baseURL = document.getElementById('setting-baseurl').value.trim();
     settings.whatsapp = document.getElementById('setting-whatsapp').value.trim();
@@ -784,12 +817,7 @@ function saveSettings() {
     var tokenVal = document.getElementById('setting-github-token').value.trim();
     setGithubToken(tokenVal);
     saveSettingsData();
-    var waLinks = document.querySelectorAll('a[href*="wa.me"]');
-    waLinks.forEach(function(a) { if (settings.whatsapp) a.href = 'https://wa.me/' + settings.whatsapp.replace(/[^0-9]/g,''); });
-    var tkLinks = document.querySelectorAll('a[href*="tiktok.com"]');
-    tkLinks.forEach(function(a) { if (settings.tiktok) a.href = 'https://tiktok.com/' + settings.tiktok; });
-    var igLinks = document.querySelectorAll('a[href*="instagram.com"]');
-    igLinks.forEach(function(a) { if (settings.instagram) a.href = 'https://instagram.com/' + settings.instagram.replace('@',''); });
+    updateSocialLinks();
     closeModal('modal-settings');
     showToast('Configuraci\u00f3n guardada', 'success');
     if (tokenVal) publishToGitHub();
@@ -850,6 +878,7 @@ function showToast(msg, type) {
     loadData();
     checkAdminAuth();
     document.getElementById('admin-view').style.display = '';
+    updateSocialLinks();
     if (properties.length > 0) renderDashboard();
 })();
 </script>
