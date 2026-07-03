@@ -247,8 +247,15 @@
                 <div><label class="form-label" for="form-guests"><i class="fa-solid fa-user-group mr-1"></i>Huéspedes</label><input type="number" id="form-guests" class="form-input" min="1" value="2"></div>
             </div>
             <div>
-                <label class="form-label"><i class="fa-solid fa-images mr-1"></i>Imágenes (rutas separadas por coma)</label>
-                <textarea id="form-images" class="form-input" rows="2" placeholder="fotos/depto-6d/01.jpg, fotos/depto-6d/02.jpg"></textarea>
+                <label class="form-label"><i class="fa-solid fa-images mr-1"></i>Imágenes</label>
+                <div id="upload-area" class="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition" style="border-color:var(--border);background:var(--bg);" onclick="document.getElementById('file-input').click()">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2" style="color:var(--text-muted);"></i>
+                    <p class="text-sm font-medium" style="color:var(--text-muted);">Arrastra fotos aquí o haz clic para seleccionar</p>
+                    <p class="text-xs mt-1" style="color:var(--text-muted);opacity:0.7;">Formatos: JPG, PNG, WEBP (se convierten a base64)</p>
+                    <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+                </div>
+                <div id="image-preview" class="flex flex-wrap gap-2 mt-3"></div>
+                <textarea id="form-images" class="form-input mt-3" rows="2" placeholder="o rutas manuales separadas por coma" style="display:none;"></textarea>
             </div>
             <div><label class="form-label" for="form-desc">Descripción</label><textarea id="form-desc" class="form-input" rows="3" placeholder="Descripción detallada..."></textarea></div>
             <div><label class="form-label" for="form-amenities">Servicios / Amenities (uno por línea)</label><textarea id="form-amenities" class="form-input" rows="2" placeholder="Wifi&#10;Piscina&#10;Estacionamiento"></textarea></div>
@@ -407,6 +414,12 @@ function genId() { return 'p_' + Date.now() + '_' + Math.random().toString(36).s
 function esc(s) { if(!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function aptNum(s) { if(!s) return ''; var m = s.match(/\d+/); return m ? m[0] : ''; }
 function isBanoPhoto(path) { return /ba[ñn]o/i.test(path); }
+function parseImages(str) {
+    if (!str) return [];
+    var parts = str.indexOf('|') !== -1 ? str.split('|') : str.split(',');
+    return parts.map(function(s){return s.trim()}).filter(Boolean);
+}
+function joinImages(arr) { return arr.join('|'); }
 
 // ====== GITHUB PUBLISH ======
 function publishToGitHub() {
@@ -505,7 +518,7 @@ function renderProperties() {
     }
     empty.style.display = 'none';
     grid.innerHTML = filtered.map(function(p, i) {
-        var imgs = (p.images||'').split(',').map(function(u) { return u.trim(); }).filter(Boolean);
+        var imgs = parseImages(p.images);
         var coverImgs = imgs.filter(function(u) { return !isBanoPhoto(u); });
         if (coverImgs.length === 0) coverImgs = imgs;
         var priceLabel = p.type === 'fija' ? '/mes' : p.type === 'corta' ? '/noche' : '';
@@ -555,7 +568,7 @@ function viewDetail(id) {
     var p = properties.find(function(pr) { return pr.id === id; });
     if (!p) return;
     detailCarouselIdx = 0;
-    var imgs = (p.images||'').split(',').map(function(u) { return u.trim(); }).filter(Boolean);
+    var imgs = parseImages(p.images);
     var currencySymbol = p.currency === 'USD' ? 'US$' : p.currency === 'EUR' ? '\u20ac' : '$';
     var priceLabel = p.type === 'fija' ? '/mes' : p.type === 'corta' ? '/noche' : '';
     var amenities = (p.amenities||'').split('\n').filter(function(a) { return a.trim(); });
@@ -576,7 +589,7 @@ function viewDetail(id) {
         (p.description ? '<div><h4 class="font-display font-bold text-sm uppercase tracking-wider mb-2 text-stone-400">Descripci\u00f3n</h4><p class="text-sm leading-relaxed text-stone-600">' + esc(p.description) + '</p></div>' : '') +
         (amenities.length > 0 ? '<div><h4 class="font-display font-bold text-sm uppercase tracking-wider mb-2 text-stone-400">Amenities</h4><div class="flex flex-wrap gap-2">' + amenities.map(function(a) { return '<span class="text-xs px-3 py-1.5 rounded-full font-medium bg-stone-100 text-stone-700 border border-stone-200/50"><i class="fa-solid fa-circle-check mr-1.5 text-emerald-700"></i>' + esc(a.trim()) + '</span>'; }).join('') + '</div></div>' : '') +
         (p.notes ? '<div class="rounded-xl p-4 bg-amber-50 border border-amber-200/50"><h4 class="font-display font-bold text-sm text-amber-900 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-circle-info"></i> Notas</h4><p class="text-xs text-amber-800 leading-relaxed">' + esc(p.notes) + '</p></div>' : '') +
-        '<div class="flex gap-3 pt-4"><a href="https://wa.me/' + (settings.whatsapp||'593991234567').replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent('Hola, quiero agendar: ' + p.name + ' (' + (p.building||'') + ' ' + (p.floor ? 'Piso '+p.floor : '') + (aptNum(p.apt) ? ' Depto '+aptNum(p.apt) : '') + ')') + '" target="_blank" class="btn-primary flex-1 text-sm"><i class="fa-solid fa-calendar-check mr-2"></i>Agendar</a><a href="https://wa.me/' + (settings.whatsapp||'593991234567').replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent('Hola, me interesa: ' + p.name + ' (' + (p.building||'') + ' ' + (p.floor ? 'Piso '+p.floor : '') + (aptNum(p.apt) ? ' Depto '+aptNum(p.apt) : '') + ')') + '" target="_blank" class="btn-secondary text-sm"><i class="fa-regular fa-star mr-2"></i>Me interesa</a></div>' +
+        '<div class="flex gap-3 pt-4"><a href="https://wa.me/' + (settings.whatsapp||'593991234567').replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent('Hola, quiero ' + (p.type === 'corta' ? 'reservar' : p.type === 'venta' ? 'comprar' : 'agendar cita de') + ': ' + p.name + ' (' + (p.building||'') + ' ' + (p.floor ? 'Piso '+p.floor : '') + (aptNum(p.apt) ? ' Depto '+aptNum(p.apt) : '') + ')') + '" target="_blank" class="btn-primary flex-1 text-sm"><i class="fa-solid ' + (p.type === 'corta' ? 'fa-calendar-check' : p.type === 'venta' ? 'fa-handshake' : 'fa-calendar-alt') + ' mr-2"></i>' + (p.type === 'corta' ? 'Reservar' : p.type === 'venta' ? 'Comprar' : 'Agendar cita') + '</a><a href="https://wa.me/' + (settings.whatsapp||'593991234567').replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent('Hola, me interesa: ' + p.name + ' (' + (p.building||'') + ' ' + (p.floor ? 'Piso '+p.floor : '') + (aptNum(p.apt) ? ' Depto '+aptNum(p.apt) : '') + ')') + '" target="_blank" class="btn-secondary text-sm"><i class="fa-regular fa-star mr-2"></i>Me interesa</a></div>' +
         '</div>';
     openModal('modal-detail');
 }
@@ -594,6 +607,7 @@ function openPropertyForm(id) {
     editingId = id || null;
     document.getElementById('property-form').reset();
     document.getElementById('form-id').value = '';
+    uploadedImages = [];
     if (id) {
         var p = properties.find(function(pr) { return pr.id === id; });
         if (!p) return;
@@ -608,7 +622,15 @@ function openPropertyForm(id) {
         document.getElementById('form-beds').value = p.beds||1;
         document.getElementById('form-baths').value = p.baths||1;
         document.getElementById('form-guests').value = p.guests||2;
-        document.getElementById('form-images').value = p.images||'';
+        // parse images: data: -> preview, paths -> textarea
+        var allImgs = parseImages(p.images);
+        var paths = [];
+        allImgs.forEach(function(img) {
+            if (img.indexOf('data:') === 0) uploadedImages.push(img);
+            else paths.push(img);
+        });
+        document.getElementById('form-images').value = paths.join(', ');
+        renderImagePreview();
         document.getElementById('form-desc').value = p.description||'';
         document.getElementById('form-amenities').value = p.amenities||'';
         document.getElementById('form-checkin').value = p.checkin||'';
@@ -644,6 +666,10 @@ function handlePropertySubmit(e) {
     var id = document.getElementById('form-id').value;
     var type = (document.querySelector('input[name="form-type"]:checked')||{}).value || activeTab;
     var imagesRaw = document.getElementById('form-images').value;
+    var allImages = [];
+    if (imagesRaw.trim()) allImages = (imagesRaw.indexOf('|') !== -1 ? imagesRaw.split('|') : imagesRaw.split(',')).map(function(s){return s.trim()}).filter(Boolean);
+    allImages = allImages.concat(uploadedImages);
+    imagesRaw = joinImages(allImages);
     var data = {
         type: type,
         name: document.getElementById('form-name').value.trim(),
@@ -684,6 +710,49 @@ function renderDashboard() {
     document.getElementById('tab-subtitle').textContent = info.subtitle;
     renderProperties();
 }
+
+// ====== IMAGE UPLOAD ======
+var uploadedImages = [];
+
+function handleFiles(files) {
+    for (var i = 0; i < files.length; i++) {
+        (function(f) {
+            if (!f.type.match('image.*')) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImages.push(e.target.result);
+                renderImagePreview();
+            };
+            reader.readAsDataURL(f);
+        })(files[i]);
+    }
+}
+
+function removeUploadedImage(idx) {
+    uploadedImages.splice(idx, 1);
+    renderImagePreview();
+}
+
+function renderImagePreview() {
+    var container = document.getElementById('image-preview');
+    container.innerHTML = '';
+    for (var i = 0; i < uploadedImages.length; i++) {
+        container.innerHTML += '<div class="relative group"><img src="' + uploadedImages[i] + '" class="w-20 h-20 rounded-lg object-cover border" style="border-color:var(--border);"><button type="button" onclick="removeUploadedImage(' + i + ')" class="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-600 text-white text-xs flex items-center justify-center shadow hover:bg-red-700 transition">&times;</button></div>';
+    }
+}
+
+// drag-and-drop
+document.addEventListener('DOMContentLoaded', function() {
+    var area = document.getElementById('upload-area');
+    if (!area) return;
+    area.addEventListener('dragover', function(e) { e.preventDefault(); area.style.borderColor = 'var(--accent)'; area.style.background = 'var(--bg-alt)'; });
+    area.addEventListener('dragleave', function(e) { e.preventDefault(); area.style.borderColor = 'var(--border)'; area.style.background = 'var(--bg)'; });
+    area.addEventListener('drop', function(e) {
+        e.preventDefault();
+        area.style.borderColor = 'var(--border)'; area.style.background = 'var(--bg)';
+        handleFiles(e.dataTransfer.files);
+    });
+});
 
 // ====== DELETE ======
 function requestDelete(id) { deletingId = id; openModal('modal-delete'); }
