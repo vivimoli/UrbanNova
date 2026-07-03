@@ -136,6 +136,7 @@
                     <span class="font-display font-bold text-2xl tracking-tight">Urban<span class="gradient-text">Nova</span></span>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button onclick="adminLogout()" class="btn-sm admin-only bg-amber-700 hover:bg-amber-800 text-stone-100 shadow-md" title="Cerrar sesión"><i class="fa-solid fa-lock-open mr-1.5"></i>Salir</button>
                     <button onclick="openSettings()" class="btn-icon admin-only" title="Configuración"><i class="fa-solid fa-gear"></i></button>
                 </div>
             </div>
@@ -143,8 +144,9 @@
     </nav>
 
     <section class="relative overflow-hidden" style="height:52vh;min-height:380px;">
-        <div class="hero-slide" style="background-image:url('fotos/edificio/01.jpg');"></div>
-        <div class="hero-slide" style="background-image:url('fotos/edificio/02.jpg');"></div>
+        <div class="hero-slide" style="background-image:url('fotos/depto-20f/01.jpg');"></div>
+        <div class="hero-slide" style="background-image:url('fotos/balcon/01.jpg');"></div>
+        <div class="hero-slide" style="background-image:url('fotos/suite-13i/01.jpg');"></div>
         <div class="absolute inset-0" style="background:linear-gradient(to bottom, rgba(33,31,29,0.65), rgba(33,31,29,0.3) 50%, var(--bg));"></div>
         <div class="absolute inset-0 flex items-center justify-center text-center px-6">
             <div class="anim-fade-up max-w-2xl">
@@ -438,6 +440,14 @@ var adminClicks = 0; var adminTimer = null;
 
 function checkAdminAuth() {
     try { if (sessionStorage.getItem('urbannova_admin') === 'true') { isAdmin = true; document.body.classList.add('admin-mode'); } } catch(e) {}
+}
+
+function adminLogout() {
+    if (confirm('\u00bfCerrar sesi\u00f3n admin?')) {
+        isAdmin = false; try { sessionStorage.removeItem('urbannova_admin'); } catch(e) {}
+        document.body.classList.remove('admin-mode'); renderProperties();
+        showToast('Sesi\u00f3n cerrada', 'info');
+    }
 }
 
 document.getElementById('navTitle').addEventListener('click', function() {
