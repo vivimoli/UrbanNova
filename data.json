@@ -308,8 +308,8 @@
       "apt": "",
       "price": "150000",
       "currency": "USD",
-      "beds": 2,
-      "baths": 2,
+      "beds": 1,
+      "baths": 1,
       "guests": 0,
       "images": "",
       "description": "",
@@ -322,13 +322,13 @@
       "welcome": "",
       "phone": "",
       "email": "",
-      "parking": "1 parqueadero",
+      "parking": "",
       "coverIndex": 0,
       "carouselAuto": false,
       "promoActive": false,
       "promoPrice": "",
       "notes": "",
-      "id": "p_1783207398395_bfxj86"
+      "id": "p_1783207931110_5hnler"
     }
   ],
   "settings": {
