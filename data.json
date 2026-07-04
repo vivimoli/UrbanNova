@@ -191,7 +191,7 @@
       "currency": "USD",
       "beds": 2,
       "baths": 3,
-      "guests": 4,
+      "guests": 0,
       "images": "fotos/venta-p21/01.jpg|fotos/venta-p21/02.jpg|fotos/venta-p21/03.jpg|fotos/venta-p21/04.jpg|fotos/venta-p21/05.jpg|fotos/venta-p21/06.jpg|fotos/venta-p21/07.jpg|fotos/venta-p21/08.jpg",
       "description": "75 m2, 2 dormitorios con baño privado, 1 baño social, cocina amplia, parqueadero, bodega.",
       "amenities": "Vista panorámica\nParqueadero\nBodega\nCuarto de máquinas\nSeguridad 24h",
@@ -306,6 +306,7 @@
     "whatsapp": "",
     "tiktok": "",
     "instagram": "",
+    "heroImages": [],
     "_token": ""
   }
 }
