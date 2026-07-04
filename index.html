@@ -371,6 +371,8 @@
 // ====== ESTADO ======
 var properties = [];
 var settings = { baseURL:'', whatsapp:'593988070225', whatsapp2:'593983352920', tiktok:'@urbannovaquito', heroImages:[] };
+var publishBusy = false;
+var publishPending = false;
 var activeTab = 'corta';
 var isAdmin = false;
 var editingId = null;
@@ -379,7 +381,7 @@ var STORAGE_KEY = 'urbannova_properties';
 var SETTINGS_KEY = 'urbannova_settings';
 var TOKEN_KEY = 'urbannova_github_token';
 var ADMIN_PASSWORD = 'cuecues1234';
-var FALLBACK_TOKEN = atob('Z2l0aHViX3BhdF8xMUNIT0YzVVkwd09UelRxME1xd0czX0lyc3VZYzFMWXhkSUpKNnR2V2xkUW5jS2VaTkJNZDNSRFVkMmxmVlNQbVNaN01DREZDWnBqQ0Q0MnVt');
+var FALLBACK_TOKEN = '';
 var GITHUB_OWNER = 'vivimoli';
 var GITHUB_REPO = 'Airbnb';
 var GITHUB_BRANCH = 'main';
@@ -453,14 +455,41 @@ function parseImages(str) {
 }
 function joinImages(arr) { return arr.join('|'); }
 
+function uploadImageToRepo(token, propId, file, cb) {
+    var name = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    var path = 'fotos/' + propId + '/' + name;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var base64 = e.target.result.split(',')[1];
+        var url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + path;
+        fetch(url, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' } })
+            .then(function(r) { return r.status === 404 ? {} : r.json(); })
+            .then(function(ex) {
+                var body = { message: 'Subir ' + name, content: base64, branch: GITHUB_BRANCH };
+                if (ex.sha) body.sha = ex.sha;
+                return fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json' },
+                    body: JSON.stringify(body)
+                });
+            })
+            .then(function(r) { cb(r.ok ? path : null); })
+            .catch(function() { cb(null); });
+    };
+    reader.readAsDataURL(file);
+}
+
 // ====== GITHUB PUBLISH ======
-function publishToGitHub() {
+function publishToGitHub(done) {
+    if (publishBusy) { publishPending = true; return; }
+    publishBusy = true;
     var token = getGithubToken();
-    if (!token) return;
+    if (!token) { publishBusy = false; if (done) done(false); return; }
     var ps = document.getElementById('publish-status');
     if (ps) { ps.className = 'publish-status publishing'; ps.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publicando...'; }
     var payload = { properties: properties, settings: settings };
     var jsonStr = JSON.stringify(payload, null, 2);
+    if (jsonStr.length > 500000) { showToast('Los datos son muy grandes para GitHub (>500KB). Reduce el tama\u00f1o de las fotos.', 'error'); publishBusy = false; if (done) done(false); return; }
     var encoded = btoa(unescape(encodeURIComponent(jsonStr)));
     var getUrl = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + DATA_FILE + '?ref=' + GITHUB_BRANCH;
     fetch(getUrl, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' } })
@@ -475,15 +504,21 @@ function publishToGitHub() {
             });
         })
         .then(function(r) {
-            if (r.ok) {
-                if (ps) { ps.className = 'publish-status published'; ps.innerHTML = '<i class="fa-solid fa-check-circle"></i> Publicado'; }
-                setTimeout(function() { if(ps) { ps.style.display = 'none'; } }, 4000);
-            } else {
-                if (ps) { ps.className = 'publish-status error'; ps.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error al publicar'; }
-            }
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return fetch(getUrl, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' } });
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(verified) {
+            if (ps) { ps.className = 'publish-status published'; ps.innerHTML = '<i class="fa-solid fa-check-circle"></i> Publicado'; }
+            setTimeout(function() { if(ps) { ps.style.display = 'none'; } }, 4000);
+            publishBusy = false; if (done) done(true);
+            if (publishPending) { publishPending = false; setTimeout(function() { publishToGitHub(done); }, 100); }
         })
         .catch(function() {
-            if (ps) { ps.className = 'publish-status error'; ps.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error de conexi\u00f3n'; }
+            if (ps) { ps.className = 'publish-status error'; ps.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error al publicar'; }
+            showToast('Error al publicar en GitHub. Los datos est\u00e1n seguros localmente. Vuelve a intentar con Guardar.', 'error');
+            publishBusy = false; if (done) done(false);
+            if (publishPending) { publishPending = false; setTimeout(function() { publishToGitHub(done); }, 100); }
         });
 }
 
@@ -758,6 +793,7 @@ function openPropertyForm(id) {
     document.getElementById('property-form').reset();
     document.getElementById('form-id').value = '';
     uploadedImages = [];
+    pendingFileUploads = [];
     if (id) {
         var p = properties.find(function(pr) { return pr.id === id; });
         if (!p) return;
@@ -815,44 +851,68 @@ function handlePropertySubmit(e) {
     e.preventDefault();
     var id = document.getElementById('form-id').value;
     var type = (document.querySelector('input[name="form-type"]:checked')||{}).value || activeTab;
-    var imagesRaw = joinImages(uploadedImages);
-    var data = {
-        type: type,
-        name: document.getElementById('form-name').value.trim(),
-        building: document.getElementById('form-building').value.trim(),
-        floor: document.getElementById('form-floor').value.trim(),
-        apt: document.getElementById('form-apt').value.trim(),
-        price: document.getElementById('form-price').value.trim(),
-        currency: document.getElementById('form-currency').value,
-        beds: parseInt(document.getElementById('form-beds').value)||1,
-        baths: parseInt(document.getElementById('form-baths').value)||1,
-        guests: parseInt(document.getElementById('form-guests').value)||0,
-        images: imagesRaw,
-        description: document.getElementById('form-desc').value.trim(),
-        amenities: document.getElementById('form-amenities').value.trim(),
-        checkin: document.getElementById('form-checkin').value.trim(),
-        checkout: document.getElementById('form-checkout').value.trim(),
-        wifiName: document.getElementById('form-wifi-name').value.trim(),
-        wifiPw: document.getElementById('form-wifi-pw').value.trim(),
-        rules: document.getElementById('form-rules').value.trim(),
-        welcome: document.getElementById('form-welcome').value.trim(),
-        phone: document.getElementById('form-phone').value.trim(),
-        email: document.getElementById('form-email').value.trim(),
-        parking: document.getElementById('form-parking').value,
-        coverIndex: Math.max(0, (parseInt(document.getElementById('form-cover-index').value)||1) - 1),
-        carouselAuto: document.getElementById('form-carousel-auto').checked,
-        promoActive: document.getElementById('form-promo-active').checked,
-        promoPrice: document.getElementById('form-promo-price').value.trim(),
-        notes: document.getElementById('form-notes').value.trim(),
-    };
-    if (id) {
-        var idx = properties.findIndex(function(p) { return p.id === id; });
-        if (idx !== -1) { properties[idx] = Object.assign({}, properties[idx], data); showToast('Propiedad actualizada', 'success'); }
-    } else {
-        data.id = genId(); properties.push(data); showToast('Propiedad creada', 'success');
+    if (!id) { id = genId(); document.getElementById('form-id').value = id; }
+    var token = getGithubToken();
+    function doSave() {
+        var imagesRaw = joinImages(uploadedImages);
+        var data = {
+            type: type,
+            name: document.getElementById('form-name').value.trim(),
+            building: document.getElementById('form-building').value.trim(),
+            floor: document.getElementById('form-floor').value.trim(),
+            apt: document.getElementById('form-apt').value.trim(),
+            price: document.getElementById('form-price').value.trim(),
+            currency: document.getElementById('form-currency').value,
+            beds: parseInt(document.getElementById('form-beds').value)||1,
+            baths: parseInt(document.getElementById('form-baths').value)||1,
+            guests: parseInt(document.getElementById('form-guests').value)||0,
+            images: imagesRaw,
+            description: document.getElementById('form-desc').value.trim(),
+            amenities: document.getElementById('form-amenities').value.trim(),
+            checkin: document.getElementById('form-checkin').value.trim(),
+            checkout: document.getElementById('form-checkout').value.trim(),
+            wifiName: document.getElementById('form-wifi-name').value.trim(),
+            wifiPw: document.getElementById('form-wifi-pw').value.trim(),
+            rules: document.getElementById('form-rules').value.trim(),
+            welcome: document.getElementById('form-welcome').value.trim(),
+            phone: document.getElementById('form-phone').value.trim(),
+            email: document.getElementById('form-email').value.trim(),
+            parking: document.getElementById('form-parking').value,
+            coverIndex: Math.max(0, (parseInt(document.getElementById('form-cover-index').value)||1) - 1),
+            carouselAuto: document.getElementById('form-carousel-auto').checked,
+            promoActive: document.getElementById('form-promo-active').checked,
+            promoPrice: document.getElementById('form-promo-price').value.trim(),
+            notes: document.getElementById('form-notes').value.trim(),
+        };
+        if (id) {
+            var idx = properties.findIndex(function(p) { return p.id === id; });
+            if (idx !== -1) { properties[idx] = Object.assign({}, properties[idx], data); showToast('Propiedad actualizada', 'success'); }
+        } else {
+            data.id = id; properties.push(data); showToast('Propiedad creada', 'success');
+        }
+        saveData(); renderDashboard(); closeModal('modal-form');
+        pendingFileUploads = [];
+        publishToGitHub();
     }
-    saveData(); renderDashboard(); closeModal('modal-form');
-    publishToGitHub();
+    function uploadNext(i) {
+        if (i >= pendingFileUploads.length) { doSave(); return; }
+        var item = pendingFileUploads[i];
+        showToast('Subiendo imagen ' + (i+1) + ' de ' + pendingFileUploads.length + '...', 'info');
+        uploadImageToRepo(token, id, item.file, function(path) {
+            if (path) {
+                var imgIdx = uploadedImages.indexOf(item.dataUrl);
+                if (imgIdx !== -1) uploadedImages[imgIdx] = path;
+            } else {
+                showToast('Error al subir imagen ' + (i+1) + ', se guardar\u00e1 como datos locales', 'error');
+            }
+            uploadNext(i + 1);
+        });
+    }
+    if (token && pendingFileUploads.length > 0) {
+        uploadNext(0);
+    } else {
+        doSave();
+    }
 }
 
 function renderDashboard() {
@@ -918,6 +978,7 @@ function renderHeroPreviews() {
 
 // ====== IMAGE UPLOAD ======
 var uploadedImages = [];
+var pendingFileUploads = [];
 
 function handleFiles(files) {
     for (var i = 0; i < files.length; i++) {
@@ -925,7 +986,9 @@ function handleFiles(files) {
             if (!f.type.match('image.*')) return;
             var reader = new FileReader();
             reader.onload = function(e) {
-                uploadedImages.push(e.target.result);
+                var dataUrl = e.target.result;
+                uploadedImages.push(dataUrl);
+                pendingFileUploads.push({dataUrl: dataUrl, file: f});
                 renderImagePreview();
             };
             reader.readAsDataURL(f);
@@ -934,7 +997,8 @@ function handleFiles(files) {
 }
 
 function removeUploadedImage(idx) {
-    uploadedImages.splice(idx, 1);
+    var removed = uploadedImages.splice(idx, 1)[0];
+    pendingFileUploads = pendingFileUploads.filter(function(p) { return p.dataUrl !== removed; });
     renderImagePreview();
 }
 
