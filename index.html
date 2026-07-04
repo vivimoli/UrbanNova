@@ -147,13 +147,8 @@
         </div>
     </nav>
 
-    <section class="relative overflow-hidden" style="height:52vh;min-height:380px;background:#2C2825;">
-        <div class="hero-slide" style="background-image:url('fotos/suite-13i/01.jpg');"></div>
-        <div class="hero-slide" style="background-image:url('fotos/depto-20f/01.jpg');"></div>
-        <div class="hero-slide" style="background-image:url('fotos/balcon/01.jpg');"></div>
-        <div class="hero-slide" style="background-image:url('fotos/depto-6d/01.jpg');"></div>
-        <div class="hero-slide" style="background-image:url('fotos/tonsupa/01.jpg');"></div>
-        <div class="hero-slide" style="background-image:url('fotos/edificio/01.jpg');"></div>
+    <section id="hero-section" class="relative overflow-hidden" style="height:52vh;min-height:380px;background:#2C2825;">
+        <div id="hero-slides-container"></div>
         <div class="absolute inset-0" style="background:linear-gradient(to bottom, rgba(33,31,29,0.65), rgba(33,31,29,0.3) 50%, var(--bg));"></div>
         <div class="absolute inset-0 flex items-center justify-center text-center px-6">
             <div class="anim-fade-up max-w-2xl">
@@ -254,9 +249,9 @@
             <div class="grid grid-cols-3 gap-3">
                 <div><label class="form-label" for="form-beds"><i class="fa-solid fa-bed mr-1"></i>Hab.</label><input type="number" id="form-beds" class="form-input" min="0" value="1"></div>
                 <div><label class="form-label" for="form-baths"><i class="fa-solid fa-bath mr-1"></i>Baños</label><input type="number" id="form-baths" class="form-input" min="0" value="1"></div>
-                <div><label class="form-label" for="form-guests"><i class="fa-solid fa-user-group mr-1"></i>Huéspedes</label><input type="number" id="form-guests" class="form-input" min="1" value="2"></div>
+                <div><label class="form-label" for="form-guests"><i class="fa-solid fa-user-group mr-1"></i>Huéspedes <span class="text-xs font-normal" style="color:var(--text-muted);">(opcional)</span></label><input type="number" id="form-guests" class="form-input" min="0" value="" placeholder="Ej: 4"></div>
             </div>
-            <div><label class="form-label" for="form-parking"><i class="fa-solid fa-car mr-1"></i>Parqueadero</label><select id="form-parking" class="form-input form-select"><option value="">No</option><option value="1 carro">1 carro</option><option value="2 carros">2 carros</option></select></div>
+            <div><label class="form-label" for="form-parking"><i class="fa-solid fa-car mr-1"></i>Parqueadero</label><select id="form-parking" class="form-input form-select"><option value="">No</option><option value="1 parqueadero">1 parqueadero</option><option value="2 parqueaderos">2 parqueaderos</option></select></div>
             <div class="grid grid-cols-2 gap-4">
                 <div><label class="form-label"><i class="fa-solid fa-images mr-1"></i>Foto de portada #</label><input type="number" id="form-cover-index" class="form-input" min="1" value="1" placeholder="1"></div>
                 <div><label class="form-label flex items-center gap-2" style="padding-top:1.4rem;"><input type="checkbox" id="form-carousel-auto" class="w-4 h-4"><span class="text-sm font-medium">Carrusel automático</span></label></div>
@@ -270,7 +265,6 @@
                     <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
                 </div>
                 <div id="image-preview" class="flex flex-wrap gap-2 mt-3"></div>
-                <textarea id="form-images" class="form-input mt-3" rows="2" placeholder="o rutas manuales separadas por coma" style="display:none;"></textarea>
             </div>
             <div><label class="form-label" for="form-desc">Descripción</label><textarea id="form-desc" class="form-input" rows="3" placeholder="Descripción detallada..."></textarea></div>
             <div><label class="form-label" for="form-amenities">Servicios / Amenities (uno por línea)</label><textarea id="form-amenities" class="form-input" rows="2" placeholder="Wifi&#10;Piscina&#10;Estacionamiento"></textarea></div>
@@ -329,6 +323,16 @@
                     <input type="password" id="setting-github-token" class="form-input" placeholder="github_pat_...">
                     <p class="text-xs text-stone-400 mt-1">Necesario para publicar cambios en GitHub automáticamente.</p>
                 </div>
+                <div class="border-t pt-4" style="border-color:var(--border);">
+                    <label class="form-label"><i class="fa-solid fa-image mr-1"></i>Imágenes del Hero <span class="text-amber-700">(fondo)</span></label>
+                    <p class="text-xs text-stone-400 mb-2">Las fotos que aparecen detrás del texto principal.</p>
+                    <div id="hero-images-preview" class="flex flex-wrap gap-2 mb-3"></div>
+                    <div id="hero-upload-area" class="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition" style="border-color:var(--border);background:var(--bg);" onclick="document.getElementById('hero-file-input').click()">
+                        <i class="fa-solid fa-cloud-arrow-up text-lg mb-1" style="color:var(--text-muted);"></i>
+                        <p class="text-xs font-medium" style="color:var(--text-muted);">Agregar foto al hero</p>
+                        <input type="file" id="hero-file-input" accept="image/*" multiple style="display:none" onchange="handleHeroFiles(this.files)">
+                    </div>
+                </div>
             </div>
             <div class="flex gap-3 pt-3">
                 <button onclick="saveSettings()" class="btn-primary flex-1"><i class="fa-solid fa-check mr-2"></i>Guardar</button>
@@ -366,7 +370,7 @@
 <script>
 // ====== ESTADO ======
 var properties = [];
-var settings = { baseURL:'', whatsapp:'', tiktok:'', instagram:'' };
+var settings = { baseURL:'', whatsapp:'', tiktok:'', instagram:'', heroImages:[] };
 var activeTab = 'corta';
 var isAdmin = false;
 var editingId = null;
@@ -773,15 +777,10 @@ function openPropertyForm(id) {
         document.getElementById('form-carousel-auto').checked = !!p.carouselAuto;
         document.getElementById('form-beds').value = p.beds||1;
         document.getElementById('form-baths').value = p.baths||1;
-        document.getElementById('form-guests').value = p.guests||2;
-        // parse images: data: -> preview, paths -> textarea
-        var allImgs = parseImages(p.images);
-        var paths = [];
-        allImgs.forEach(function(img) {
-            if (img.indexOf('data:') === 0) uploadedImages.push(img);
-            else paths.push(img);
-        });
-        document.getElementById('form-images').value = paths.join(', ');
+        document.getElementById('form-guests').value = p.guests||'';
+        // all images go to preview (paths + data URLs)
+        uploadedImages = parseImages(p.images);
+        document.getElementById('form-images').value = '';
         renderImagePreview();
         document.getElementById('form-desc').value = p.description||'';
         document.getElementById('form-amenities').value = p.amenities||'';
@@ -817,11 +816,7 @@ function handlePropertySubmit(e) {
     e.preventDefault();
     var id = document.getElementById('form-id').value;
     var type = (document.querySelector('input[name="form-type"]:checked')||{}).value || activeTab;
-    var imagesRaw = document.getElementById('form-images').value;
-    var allImages = [];
-    if (imagesRaw.trim()) allImages = (imagesRaw.indexOf('|') !== -1 ? imagesRaw.split('|') : imagesRaw.split(',')).map(function(s){return s.trim()}).filter(Boolean);
-    allImages = allImages.concat(uploadedImages);
-    imagesRaw = joinImages(allImages);
+    var imagesRaw = joinImages(uploadedImages);
     var data = {
         type: type,
         name: document.getElementById('form-name').value.trim(),
@@ -832,7 +827,7 @@ function handlePropertySubmit(e) {
         currency: document.getElementById('form-currency').value,
         beds: parseInt(document.getElementById('form-beds').value)||1,
         baths: parseInt(document.getElementById('form-baths').value)||1,
-        guests: parseInt(document.getElementById('form-guests').value)||2,
+        guests: parseInt(document.getElementById('form-guests').value)||0,
         images: imagesRaw,
         description: document.getElementById('form-desc').value.trim(),
         amenities: document.getElementById('form-amenities').value.trim(),
@@ -867,6 +862,59 @@ function renderDashboard() {
     document.getElementById('tab-title').textContent = info.title;
     document.getElementById('tab-subtitle').textContent = info.subtitle;
     renderProperties();
+}
+
+// ====== HERO ======
+var heroImages = [];
+
+function renderHero() {
+    var container = document.getElementById('hero-slides-container');
+    var imgs = settings.heroImages || [];
+    // defaults if empty
+    if (imgs.length === 0) imgs = ['fotos/suite-13i/01.jpg','fotos/depto-20f/01.jpg','fotos/balcon/01.jpg','fotos/depto-6d/01.jpg','fotos/tonsupa/01.jpg','fotos/edificio/01.jpg'];
+    container.innerHTML = imgs.map(function(src) {
+        return '<div class="hero-slide" style="background-image:url(\'' + esc(src) + '\');"></div>';
+    }).join('');
+}
+
+function handleHeroFiles(files) {
+    for (var i = 0; i < files.length; i++) {
+        (function(f) {
+            if (!f.type.match('image.*')) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var arr = settings.heroImages || [];
+                if (arr.length >= 6) { showToast('M\u00e1ximo 6 im\u00e1genes', 'error'); return; }
+                arr.push(e.target.result);
+                settings.heroImages = arr;
+                renderHeroPreviews();
+                renderHero();
+            };
+            reader.readAsDataURL(f);
+        })(files[i]);
+    }
+}
+
+function removeHeroImage(idx) {
+    var arr = settings.heroImages || [];
+    arr.splice(idx, 1);
+    settings.heroImages = arr;
+    renderHeroPreviews();
+    renderHero();
+}
+
+function renderHeroPreviews() {
+    var container = document.getElementById('hero-images-preview');
+    var imgs = settings.heroImages || [];
+    container.innerHTML = imgs.map(function(src, i) {
+        return '<div class="relative group"><img src="' + esc(src) + '" class="w-20 h-20 rounded-lg object-cover border" style="border-color:var(--border);"><button type="button" onclick="removeHeroImage(' + i + ')" class="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-600 text-white text-xs flex items-center justify-center shadow hover:bg-red-700 transition">&times;</button></div>';
+    }).join('');
+    // add empty slots hint
+    if (imgs.length < 6) {
+        for (var i = imgs.length; i < 6; i++) {
+            container.innerHTML += '<div class="w-20 h-20 rounded-lg border-2 border-dashed flex items-center justify-center" style="border-color:var(--border);"><span class="text-xs" style="color:var(--text-muted);">' + (i+1) + '</span></div>';
+        }
+    }
 }
 
 // ====== IMAGE UPLOAD ======
@@ -931,6 +979,7 @@ function openSettings() {
     document.getElementById('setting-github-token').value = getGithubToken();
     var tokenGroup = document.getElementById('setting-github-token').closest('.admin-only-block');
     tokenGroup.style.display = isAdmin ? 'block' : 'none';
+    if (isAdmin) renderHeroPreviews();
     openModal('modal-settings');
 }
 
@@ -952,6 +1001,7 @@ function saveSettings() {
     setGithubToken(tokenVal);
     saveSettingsData();
     updateSocialLinks();
+    renderHero();
     closeModal('modal-settings');
     showToast('Configuraci\u00f3n guardada', 'success');
     if (tokenVal) publishToGitHub();
@@ -1013,6 +1063,7 @@ function showToast(msg, type) {
     checkAdminAuth();
     document.getElementById('admin-view').style.display = '';
     updateSocialLinks();
+    renderHero();
     if (properties.length > 0) {
         renderDashboard();
         var match = window.location.search.match(/[?&]guide=([^&]+)/);
