@@ -468,7 +468,10 @@ function resizeImage(file, maxW, maxH, cb) {
             var c = document.createElement('canvas');
             c.width = w; c.height = h;
             c.getContext('2d').drawImage(img, 0, 0, w, h);
-            c.toBlob(function(b) { cb(new File([b], file.name, {type:'image/jpeg'})); }, 'image/jpeg', 0.82);
+            c.toBlob(function(b) {
+                if (b) cb(new File([b], file.name.replace(/\.\w+$/, '.webp'), {type:'image/webp'}));
+                else c.toBlob(function(b2) { cb(new File([b2], file.name, {type:'image/jpeg'})); }, 'image/jpeg', 0.85);
+            }, 'image/webp', 0.80);
         };
         img.src = e.target.result;
     };
@@ -478,7 +481,7 @@ function resizeImage(file, maxW, maxH, cb) {
 function uploadImageToRepo(token, propId, file, cb) {
     resizeImage(file, 1600, 1200, function(compressed) {
         var name = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        name = name.replace(/\.(png|webp|jpeg)$/i, '.jpg');
+        name = name.replace(/\.(png|webp|jpeg|jpg)$/i, '.webp');
         var path = 'fotos/' + propId + '/' + name;
         var reader = new FileReader();
         reader.onload = function(e) {
@@ -512,82 +515,92 @@ function publishToGitHub(done) {
     if (ps) { ps.className = 'publish-status publishing'; ps.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publicando...'; }
     var publishSettings = {};
     for (var k in settings) { if (settings.hasOwnProperty(k) && k !== '_token') publishSettings[k] = settings[k]; }
-    var payload = { properties: properties, settings: publishSettings };
-    var jsonStr = JSON.stringify(payload, null, 2);
-    if (jsonStr.length > 3000000) { showToast('Los datos son muy grandes para GitHub (>3MB). Reduce el tama\u00f1o de las fotos.', 'error'); publishBusy = false; if (done) done(false); return; }
-    var encoded = btoa(unescape(encodeURIComponent(jsonStr)));
     var baseUrl = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO;
     var headers = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' };
 
-    // Use Git Data API to avoid 409 secret scanning on Contents API
-    function createBlob() {
+    var treeEntries = [];
+    var heroUploads = [];
+
+    // Check for base64 hero images and upload via Git Data API
+    (publishSettings.heroImages || []).forEach(function(src, i) {
+        if (typeof src === 'string' && src.indexOf('data:') === 0) {
+            var m = src.match(/^data:([^;]+);base64,(.+)$/);
+            if (m) {
+                var ext = m[1].indexOf('webp') !== -1 ? '.webp' : '.jpg';
+                var name = 'hero_' + Date.now() + '_' + i + ext;
+                var path = 'fotos/hero/' + name;
+                heroUploads.push(
+                    fetch(baseUrl + '/git/blobs', {
+                        method: 'POST',
+                        headers: Object.assign({}, headers, {'Content-Type':'application/json'}),
+                        body: JSON.stringify({ content: m[2], encoding: 'base64' })
+                    }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(function(blob) {
+                        treeEntries.push({ path: path, mode: '100644', type: 'blob', sha: blob.sha });
+                        publishSettings.heroImages[i] = path;
+                    })
+                );
+            }
+        }
+    });
+
+    Promise.all(heroUploads).then(function() {
+        var payload = { properties: properties, settings: publishSettings };
+        var jsonStr = JSON.stringify(payload, null, 2);
+        if (jsonStr.length > 3000000) { showToast('Los datos son muy grandes para GitHub (>3MB). Reduce el tama\u00f1o de las fotos.', 'error'); throw 'size'; }
         return fetch(baseUrl + '/git/blobs', {
             method: 'POST',
             headers: Object.assign({}, headers, {'Content-Type':'application/json'}),
             body: JSON.stringify({ content: jsonStr, encoding: 'utf-8' })
-        }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-    }
-
-    function getLatestCommit() {
-        return fetch(baseUrl + '/git/refs/heads/' + GITHUB_BRANCH, { headers: headers })
-            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-            .then(function(ref) {
-                return fetch(baseUrl + '/git/commits/' + ref.object.sha, { headers: headers })
-                    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-            });
-    }
-
-    function createTree(blobSha, baseTreeSha) {
+        });
+    }).then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+    }).then(function(blob) {
+        treeEntries.push({ path: DATA_FILE, mode: '100644', type: 'blob', sha: blob.sha });
+        return fetch(baseUrl + '/git/refs/heads/' + GITHUB_BRANCH, { headers: headers }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    }).then(function(ref) {
+        return fetch(baseUrl + '/git/commits/' + ref.object.sha, { headers: headers }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function(commit) { return {ref: ref, commit: commit}; });
+    }).then(function(ctx) {
         return fetch(baseUrl + '/git/trees', {
             method: 'POST',
             headers: Object.assign({}, headers, {'Content-Type':'application/json'}),
-            body: JSON.stringify({ base_tree: baseTreeSha, tree: [{ path: DATA_FILE, mode: '100644', type: 'blob', sha: blobSha }] })
-        }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-    }
-
-    function createCommit(treeSha, parentSha) {
+            body: JSON.stringify({ base_tree: ctx.commit.tree.sha, tree: treeEntries })
+        }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function(tree) { ctx.tree = tree; return ctx; });
+    }).then(function(ctx) {
         return fetch(baseUrl + '/git/commits', {
             method: 'POST',
             headers: Object.assign({}, headers, {'Content-Type':'application/json'}),
-            body: JSON.stringify({ message: 'Actualizar datos UrbanNova', tree: treeSha, parents: [parentSha] })
-        }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-    }
-
-    function updateRef(commitSha) {
+            body: JSON.stringify({ message: 'Actualizar datos UrbanNova', tree: ctx.tree.sha, parents: [ctx.commit.sha] })
+        }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function(newCommit) { ctx.newCommit = newCommit; return ctx; });
+    }).then(function(ctx) {
         return fetch(baseUrl + '/git/refs/heads/' + GITHUB_BRANCH, {
             method: 'PATCH',
             headers: Object.assign({}, headers, {'Content-Type':'application/json'}),
-            body: JSON.stringify({ sha: commitSha, force: false })
+            body: JSON.stringify({ sha: ctx.newCommit.sha, force: false })
         }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-    }
-
-    createBlob()
-        .then(function(blob) { return getLatestCommit().then(function(commit) { return {blob: blob, commit: commit}; }); })
-        .then(function(ctx) { return createTree(ctx.blob.sha, ctx.commit.tree.sha).then(function(tree) { ctx.tree = tree; return ctx; }); })
-        .then(function(ctx) { return createCommit(ctx.tree.sha, ctx.commit.sha).then(function(newCommit) { ctx.newCommit = newCommit; return ctx; }); })
-        .then(function(ctx) { return updateRef(ctx.newCommit.sha); })
-        .then(function() {
-            if (ps) { ps.className = 'publish-status published'; ps.innerHTML = '<i class="fa-solid fa-check-circle"></i> Publicado'; }
-            setTimeout(function() { if(ps) { ps.style.display = 'none'; } }, 4000);
-            publishBusy = false; if (done) done(true);
-            if (publishPending) { publishPending = false; setTimeout(function() { publishToGitHub(done); }, 100); }
-        })
-        .catch(function(e) {
-            if (ps) { ps.className = 'publish-status error'; ps.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error al publicar'; }
-            var msg = '';
-            if (e && e.message) {
-                if (e.message.indexOf('409') !== -1) msg = 'GitHub rechaz\u00f3 por seguridad. Revisa que el token no est\u00e9 en los datos.';
-                else if (e.message.indexOf('401') !== -1) msg = 'Token inv\u00e1lido o expirado. Genera uno nuevo en GitHub.';
-                else if (e.message.indexOf('403') !== -1) msg = 'Token sin permisos de escritura.';
-                else if (e.message.indexOf('422') !== -1) msg = 'Contenido demasiado grande para GitHub.';
-                else msg = 'Error: ' + e.message;
-            } else {
-                msg = 'Error de conexi\u00f3n con GitHub. Revisa tu internet o firewall.';
-            }
-            showToast(msg, 'error');
-            publishBusy = false; if (done) done(false);
-            if (publishPending) { publishPending = false; setTimeout(function() { publishToGitHub(done); }, 100); }
-        });
+    }).then(function() {
+        if (ps) { ps.className = 'publish-status published'; ps.innerHTML = '<i class="fa-solid fa-check-circle"></i> Publicado'; }
+        setTimeout(function() { if(ps) { ps.style.display = 'none'; } }, 4000);
+        publishBusy = false; if (done) done(true);
+        if (publishPending) { publishPending = false; setTimeout(function() { publishToGitHub(done); }, 100); }
+    }).catch(function(e) {
+        if (e === 'size') { publishBusy = false; if (done) done(false); return; }
+        if (ps) { ps.className = 'publish-status error'; ps.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error al publicar'; }
+        var msg = '';
+        if (e && e.message) {
+            if (e.message.indexOf('409') !== -1) msg = 'GitHub rechaz\u00f3 por seguridad. Revisa que el token no est\u00e9 en los datos.';
+            else if (e.message.indexOf('401') !== -1) msg = 'Token inv\u00e1lido o expirado. Genera uno nuevo en GitHub.';
+            else if (e.message.indexOf('403') !== -1) msg = 'Token sin permisos de escritura.';
+            else if (e.message.indexOf('422') !== -1) msg = 'Contenido demasiado grande para GitHub.';
+            else msg = 'Error: ' + e.message;
+        } else {
+            msg = 'Error de conexi\u00f3n con GitHub. Revisa tu internet o firewall.';
+        }
+        showToast(msg, 'error');
+        publishBusy = false; if (done) done(false);
+        if (publishPending) { publishPending = false; setTimeout(function() { publishToGitHub(done); }, 100); }
+    });
 }
 
 // ====== ADMIN ======
