@@ -511,10 +511,10 @@ function publishToGitHub(done) {
     var ps = document.getElementById('publish-status');
     if (ps) { ps.className = 'publish-status publishing'; ps.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publicando...'; }
     var publishSettings = {};
-    for (var k in settings) { if (settings.hasOwnProperty(k) && k !== '_token' && k !== 'heroImages') publishSettings[k] = settings[k]; }
+    for (var k in settings) { if (settings.hasOwnProperty(k) && k !== '_token') publishSettings[k] = settings[k]; }
     var payload = { properties: properties, settings: publishSettings };
     var jsonStr = JSON.stringify(payload, null, 2);
-    if (jsonStr.length > 1000000) { showToast('Los datos son muy grandes para GitHub (>1MB). Reduce el tama\u00f1o de las fotos.', 'error'); publishBusy = false; if (done) done(false); return; }
+    if (jsonStr.length > 3000000) { showToast('Los datos son muy grandes para GitHub (>3MB). Reduce el tama\u00f1o de las fotos.', 'error'); publishBusy = false; if (done) done(false); return; }
     var encoded = btoa(unescape(encodeURIComponent(jsonStr)));
     var baseUrl = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO;
     var headers = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' };
