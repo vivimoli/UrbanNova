@@ -541,8 +541,17 @@ function publishToGitHub(done) {
         })
         .catch(function(e) {
             if (ps) { ps.className = 'publish-status error'; ps.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error al publicar'; }
-            if (e && e.message && e.message.indexOf('409') !== -1) { showToast('GitHub rechaz\u00f3 el contenido (posible token expuesto). Revisa que el token no est\u00e9 en los datos.', 'error'); }
-            else { showToast('Error al publicar en GitHub. Los datos est\u00e1n seguros localmente. Vuelve a intentar con Guardar.', 'error'); }
+            var msg = '';
+            if (e && e.message) {
+                if (e.message.indexOf('409') !== -1) msg = 'GitHub rechaz\u00f3 por seguridad. Revisa que el token no est\u00e9 en los datos.';
+                else if (e.message.indexOf('401') !== -1) msg = 'Token inv\u00e1lido o expirado. Genera uno nuevo en GitHub.';
+                else if (e.message.indexOf('403') !== -1) msg = 'Token sin permisos de escritura.';
+                else if (e.message.indexOf('422') !== -1) msg = 'Contenido demasiado grande para GitHub.';
+                else msg = 'Error: ' + e.message;
+            } else {
+                msg = 'Error de conexi\u00f3n con GitHub. Revisa tu internet o firewall.';
+            }
+            showToast(msg, 'error');
             publishBusy = false; if (done) done(false);
             if (publishPending) { publishPending = false; setTimeout(function() { publishToGitHub(done); }, 100); }
         });
