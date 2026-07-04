@@ -257,6 +257,10 @@
                 <div><label class="form-label" for="form-guests"><i class="fa-solid fa-user-group mr-1"></i>Huéspedes</label><input type="number" id="form-guests" class="form-input" min="1" value="2"></div>
             </div>
             <div><label class="form-label" for="form-parking"><i class="fa-solid fa-car mr-1"></i>Parqueadero</label><select id="form-parking" class="form-input form-select"><option value="">No</option><option value="1 carro">1 carro</option><option value="2 carros">2 carros</option></select></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="form-label"><i class="fa-solid fa-images mr-1"></i>Foto de portada #</label><input type="number" id="form-cover-index" class="form-input" min="1" value="1" placeholder="1"></div>
+                <div><label class="form-label flex items-center gap-2" style="padding-top:1.4rem;"><input type="checkbox" id="form-carousel-auto" class="w-4 h-4"><span class="text-sm font-medium">Carrusel automático</span></label></div>
+            </div>
             <div>
                 <label class="form-label"><i class="fa-solid fa-images mr-1"></i>Imágenes</label>
                 <div id="upload-area" class="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition" style="border-color:var(--border);background:var(--bg);" onclick="document.getElementById('file-input').click()">
@@ -419,14 +423,14 @@ function fetchDataFromServer() {
 
 function loadDemoData() {
     properties = [
-        {id:genId(),type:'corta',name:'Depto 6D - Avant Plaza',building:'Edificio Avant Plaza',floor:'6',apt:'D',price:'',currency:'USD',beds:2,baths:2,guests:4,images:'fotos/depto-6d/01.jpg, fotos/depto-6d/02.jpg, fotos/depto-6d/03.jpg, fotos/depto-6d/04.jpg, fotos/depto-6d/05.jpg, fotos/depto-6d/06.jpg, fotos/depto-6d/07.jpg, fotos/depto-6d/08.jpg',description:'Departamento en el edificio Avant Plaza, calle Finlandia n3560 y Suecia. Gran ubicaci\u00f3n a pasos del Parque La Carolina, Megamaxi, Supercines, Quicentro. Internet de ultra velocidad, lavadora, secadora, microondas, horno, menaje completo para 4 hu\u00e9spedes.',amenities:'Wifi\nLavadora\nSecadora\nSmart TV\nMicroondas\nJacuzzi\nGimnasio\nSauna\nParqueadero gratis\nSeguridad 24h',checkin:'15:00',checkout:'11:00',wifiName:'AvantPlaza_WiFi',wifiPw:'Bienvenido2024!',rules:'No fumar\nNo mascotas\nNo fiestas\nNo visitas\nSilencio despu\u00e9s de 22:00',welcome:'\u00a1Bienvenido al Departamento 6D! Disfruta de tu estancia.',phone:'',email:'',notes:'Jacuzzi requiere reserva con 48h. Ba\u00f1o turco con 2h. Gym acceso libre 6:00-21:00.'},
-        {id:genId(),type:'corta',name:'Depto 20F - Torre Solari',building:'Torre Solari',floor:'20',apt:'F',price:'',currency:'USD',beds:2,baths:2,guests:4,images:'fotos/depto-20f/01.jpg, fotos/depto-20f/02.jpg, fotos/depto-20f/03.jpg, fotos/depto-20f/04.jpg, fotos/depto-20f/05.jpg, fotos/depto-20f/06.jpg, fotos/depto-20f/07.jpg, fotos/depto-20f/08.jpg, fotos/depto-20f/09.jpg, fotos/depto-20f/10.jpg, fotos/depto-20f/11.jpg, fotos/depto-20f/12.jpg, fotos/depto-20f/13.jpg, fotos/depto-20f/14.jpg',description:'Tercer edificio m\u00e1s alto de Quito, incre\u00edble vista del centro norte. Totalmente equipado, 2 TV, wifi, cocina, lavadora, secadora, generador de luz.',amenities:'Wifi\nLavadora\nSecadora\nSmart TV\nGimnasio\nSala de Cine\nJacuzzi\nSauna\nBBQ\nParqueadero\nSeguridad 24h',checkin:'15:00',checkout:'11:00',wifiName:'TorreSolari_Guest',wifiPw:'Solari2024!',rules:'No fumar\nNo alcohol\nNo mascotas\nNo visitas\nNo reuniones',welcome:'\u00a1Bienvenido al 20F! Disfruta la mejor vista de Quito.',phone:'',email:'',notes:'Jacuzzi y sauna requieren reserva con 48h (lun-vie). Lunes jacuzzi en mantenimiento.'},
-        {id:genId(),type:'corta',name:'Depto Balc\u00f3n - Avant Plaza',building:'Edificio Avant Plaza',floor:'',apt:'',price:'',currency:'USD',beds:2,baths:2,guests:4,images:'fotos/balcon/01.jpg, fotos/balcon/02.jpg, fotos/balcon/03.jpg, fotos/balcon/04.jpg, fotos/balcon/05.jpg, fotos/balcon/06.jpg, fotos/balcon/07.jpg, fotos/balcon/08.jpg, fotos/balcon/09.jpg, fotos/balcon/10.jpg, fotos/balcon/11.jpg, fotos/balcon/12.jpg',description:'Amplio departamento con balc\u00f3n. Dos dormitorios, menaje completo, parqueadero gratis.',amenities:'Wifi\nLavadora\nSecadora\nSmart TV\nNetflix\nMicroondas\nBalc\u00f3n\nParqueadero gratis\nJacuzzi\nGimnasio\nSeguridad 24h',checkin:'13:00',checkout:'11:00',wifiName:'AvantPlaza_WiFi',wifiPw:'Bienvenido2024!',rules:'No fumar\nNo mascotas\nNo fiestas\nNo visitas',welcome:'\u00a1Bienvenido! Disfruta del balc\u00f3n en la mejor zona de Quito.',phone:'',email:'',notes:'Check-in desde 13:00. Parqueadero gratis asignado en recepci\u00f3n. Jacuzzi requiere 48h.'},
-        {id:genId(),type:'corta',name:'Suite 13I - Eye In The Sky',building:'Torre Solari',floor:'13',apt:'I',price:'',currency:'USD',beds:1,baths:1,guests:3,images:'fotos/suite-13i/01.jpg, fotos/suite-13i/02.jpg, fotos/suite-13i/03.jpg, fotos/suite-13i/04.jpg, fotos/suite-13i/05.jpg, fotos/suite-13i/06.jpg, fotos/suite-13i/07.jpg',description:'Suite tem\u00e1tica con vista. A 3 minutos del Parque La Carolina, Quicentro y Estadio Ol\u00edmpico.',amenities:'Wifi\nSmart TV\nGimnasio\nJacuzzi\nSauna\nSala de Juegos\nBBQ\nCoworking\nPet friendly',checkin:'15:00',checkout:'11:00',wifiName:'Solari13I_Guest',wifiPw:'SkyView2024!',rules:'No fiestas\nNo fumar\nNo vapear\nM\u00e1ximo 3 personas\nSe admite 1 mascota',welcome:'\u00a1Bienvenido a Eye In The Sky!',phone:'',email:'',notes:'No tiene parqueadero propio. Se puede reservar uno con 48h por costo adicional.'},
-        {id:genId(),type:'corta',name:'Departamento Tonsupa',building:'Edificio Residencial Tonsupa',floor:'',apt:'',price:'',currency:'USD',beds:2,baths:1,guests:7,images:'fotos/tonsupa/01.jpg, fotos/tonsupa/02.jpg, fotos/tonsupa/03.jpg, fotos/tonsupa/04.jpg, fotos/tonsupa/05.jpg, fotos/tonsupa/06.jpg, fotos/tonsupa/07.jpg',description:'A media cuadra del mar en Tonsupa. 2 dormitorios, piscina, wifi. Ideal para familias.',amenities:'Wifi\nPiscina\nAgua caliente\nA media cuadra del mar',checkin:'14:00',checkout:'11:00',wifiName:'Tonsupa_Beach',wifiPw:'Tonsupa2024!',rules:'No fumar\nNo mascotas\nNo fiestas',welcome:'\u00a1Bienvenido a Tonsupa! Disfruta del sol y la playa.',phone:'',email:'',notes:'A media cuadra del mar. Piscina disponible.'},
-        {id:genId(),type:'fija',name:'Renta Fija Piso 20 - Torre Solari',building:'Torre Solari',floor:'20',apt:'',price:'850',currency:'USD',beds:2,baths:2,guests:4,images:'',description:'Departamento totalmente amoblado y equipado. Contrato m\u00ednimo 1 a\u00f1o. Vista panor\u00e1mica.',amenities:'Amoblado\nGimnasio\nCoworking\nSala de Cine\nJacuzzi\nSauna\n\u00c1reas comunales\nSeguridad 24h',checkin:'',checkout:'',wifiName:'',wifiPw:'',rules:'',welcome:'',phone:'',email:'',notes:'USD 850 mensuales incluye al\u00edcuota. Garant\u00eda: 2 meses.'},
-        {id:genId(),type:'venta',name:'Venta Piso 21 - Torre Solari',building:'Torre Solari',floor:'21',apt:'',price:'160000',currency:'USD',beds:2,baths:3,guests:4,images:'fotos/venta-p21/01.jpg, fotos/venta-p21/02.jpg, fotos/venta-p21/03.jpg, fotos/venta-p21/04.jpg, fotos/venta-p21/05.jpg, fotos/venta-p21/06.jpg, fotos/venta-p21/07.jpg, fotos/venta-p21/08.jpg',description:'75 m2, 2 dormitorios con ba\u00f1o privado, 1 ba\u00f1o social, cocina amplia, parqueadero, bodega.',amenities:'Vista panor\u00e1mica\nParqueadero\nBodega\nCuarto de m\u00e1quinas\nSeguridad 24h',checkin:'',checkout:'',wifiName:'',wifiPw:'',rules:'',welcome:'',phone:'',email:'',notes:'Precio: $160,000. Vista al Parque Metropolitano y nevados.'},
-        {id:genId(),type:'venta',name:'Suite Piso 15 - Torre Solari',building:'Torre Solari',floor:'15',apt:'',price:'118999',currency:'USD',beds:1,baths:2,guests:2,images:'',description:'Suite en piso 15. 50.62 m2, 1 dormitorio, 1 ba\u00f1o completo + medio ba\u00f1o, bodega.',amenities:'Vista a la 6 de Diciembre\nBodega\nCocina integrada\nSeguridad 24h',checkin:'',checkout:'',wifiName:'',wifiPw:'',rules:'',welcome:'',phone:'',email:'',notes:'$118,999 (negociable). No dispone de parqueadero.'},
+        {id:genId(),type:'corta',name:'Depto 6A - Avant Plaza',building:'Edificio Avant Plaza',floor:'6',apt:'A',price:'',currency:'USD',beds:2,baths:2,guests:4,images:'fotos/depto-6d/01.jpg, fotos/depto-6d/02.jpg, fotos/depto-6d/03.jpg, fotos/depto-6d/04.jpg, fotos/depto-6d/05.jpg, fotos/depto-6d/06.jpg, fotos/depto-6d/07.jpg, fotos/depto-6d/08.jpg',description:'Departamento en el edificio Avant Plaza, calle Finlandia n3560 y Suecia. Gran ubicaci\u00f3n a pasos del Parque La Carolina, Megamaxi, Supercines, Quicentro. Internet de ultra velocidad, lavadora, secadora, microondas, horno, menaje completo para 4 hu\u00e9spedes.',amenities:'Wifi\nLavadora\nSecadora\nSmart TV\nMicroondas\nJacuzzi\nGimnasio\nSauna\nParqueadero gratis\nSeguridad 24h',checkin:'15:00',checkout:'11:00',wifiName:'AvantPlaza_WiFi',wifiPw:'Bienvenido2024!',rules:'No fumar\nNo mascotas\nNo fiestas\nNo visitas\nSilencio despu\u00e9s de 22:00',welcome:'\u00a1Bienvenido al Departamento 6A! Disfruta de tu estancia.',phone:'',email:'',notes:'Jacuzzi requiere reserva con 48h. Ba\u00f1o turco con 2h. Gym acceso libre 6:00-21:00.',parking:'',promoActive:false,promoPrice:'',carouselAuto:false,coverIndex:0},
+        {id:genId(),type:'corta',name:'Depto 20F - Torre Solari',building:'Torre Solari',floor:'20',apt:'F',price:'',currency:'USD',beds:2,baths:2,guests:4,images:'fotos/depto-20f/01.jpg, fotos/depto-20f/02.jpg, fotos/depto-20f/03.jpg, fotos/depto-20f/04.jpg, fotos/depto-20f/05.jpg, fotos/depto-20f/06.jpg, fotos/depto-20f/07.jpg, fotos/depto-20f/08.jpg, fotos/depto-20f/09.jpg, fotos/depto-20f/10.jpg, fotos/depto-20f/11.jpg, fotos/depto-20f/12.jpg, fotos/depto-20f/13.jpg, fotos/depto-20f/14.jpg',description:'Tercer edificio m\u00e1s alto de Quito, incre\u00edble vista del centro norte. Totalmente equipado, 2 TV, wifi, cocina, lavadora, secadora, generador de luz.',amenities:'Wifi\nLavadora\nSecadora\nSmart TV\nGimnasio\nSala de Cine\nJacuzzi\nSauna\nBBQ\nParqueadero\nSeguridad 24h',checkin:'15:00',checkout:'11:00',wifiName:'TorreSolari_Guest',wifiPw:'Solari2024!',rules:'No fumar\nNo alcohol\nNo mascotas\nNo visitas\nNo reuniones',welcome:'\u00a1Bienvenido al 20F! Disfruta la mejor vista de Quito.',phone:'',email:'',notes:'Jacuzzi y sauna requieren reserva con 48h (lun-vie). Lunes jacuzzi en mantenimiento.',parking:'',promoActive:false,promoPrice:'',carouselAuto:false,coverIndex:0},
+        {id:genId(),type:'corta',name:'Depto Balc\u00f3n - Avant Plaza',building:'Edificio Avant Plaza',floor:'',apt:'',price:'',currency:'USD',beds:2,baths:2,guests:4,images:'fotos/balcon/01.jpg, fotos/balcon/02.jpg, fotos/balcon/03.jpg, fotos/balcon/04.jpg, fotos/balcon/05.jpg, fotos/balcon/06.jpg, fotos/balcon/07.jpg, fotos/balcon/08.jpg, fotos/balcon/09.jpg, fotos/balcon/10.jpg, fotos/balcon/11.jpg, fotos/balcon/12.jpg',description:'Amplio departamento con balc\u00f3n. Dos dormitorios, menaje completo, parqueadero gratis.',amenities:'Wifi\nLavadora\nSecadora\nSmart TV\nNetflix\nMicroondas\nBalc\u00f3n\nParqueadero gratis\nJacuzzi\nGimnasio\nSeguridad 24h',checkin:'13:00',checkout:'11:00',wifiName:'AvantPlaza_WiFi',wifiPw:'Bienvenido2024!',rules:'No fumar\nNo mascotas\nNo fiestas\nNo visitas',welcome:'\u00a1Bienvenido! Disfruta del balc\u00f3n en la mejor zona de Quito.',phone:'',email:'',notes:'Check-in desde 13:00. Parqueadero gratis asignado en recepci\u00f3n. Jacuzzi requiere 48h.',parking:'',promoActive:false,promoPrice:'',carouselAuto:false,coverIndex:0},
+        {id:genId(),type:'corta',name:'Suite 13I - Eye In The Sky',building:'Torre Solari',floor:'13',apt:'I',price:'',currency:'USD',beds:1,baths:1,guests:3,images:'fotos/suite-13i/01.jpg, fotos/suite-13i/02.jpg, fotos/suite-13i/03.jpg, fotos/suite-13i/04.jpg, fotos/suite-13i/05.jpg, fotos/suite-13i/06.jpg, fotos/suite-13i/07.jpg',description:'Suite tem\u00e1tica con vista. A 3 minutos del Parque La Carolina, Quicentro y Estadio Ol\u00edmpico.',amenities:'Wifi\nSmart TV\nGimnasio\nJacuzzi\nSauna\nSala de Juegos\nBBQ\nCoworking\nPet friendly',checkin:'15:00',checkout:'11:00',wifiName:'Solari13I_Guest',wifiPw:'SkyView2024!',rules:'No fiestas\nNo fumar\nNo vapear\nM\u00e1ximo 3 personas\nSe admite 1 mascota',welcome:'\u00a1Bienvenido a Eye In The Sky!',phone:'',email:'',notes:'No tiene parqueadero propio. Se puede reservar uno con 48h por costo adicional.',parking:'',promoActive:false,promoPrice:'',carouselAuto:false,coverIndex:0},
+        {id:genId(),type:'corta',name:'Departamento Tonsupa',building:'Edificio Residencial Tonsupa',floor:'',apt:'',price:'',currency:'USD',beds:2,baths:1,guests:7,images:'fotos/tonsupa/01.jpg, fotos/tonsupa/02.jpg, fotos/tonsupa/03.jpg, fotos/tonsupa/04.jpg, fotos/tonsupa/05.jpg, fotos/tonsupa/06.jpg, fotos/tonsupa/07.jpg',description:'A media cuadra del mar en Tonsupa. 2 dormitorios, piscina, wifi. Ideal para familias.',amenities:'Wifi\nPiscina\nAgua caliente\nA media cuadra del mar',checkin:'14:00',checkout:'11:00',wifiName:'Tonsupa_Beach',wifiPw:'Tonsupa2024!',rules:'No fumar\nNo mascotas\nNo fiestas',welcome:'\u00a1Bienvenido a Tonsupa! Disfruta del sol y la playa.',phone:'',email:'',notes:'A media cuadra del mar. Piscina disponible.',parking:'',promoActive:false,promoPrice:'',carouselAuto:false,coverIndex:0},
+        {id:genId(),type:'fija',name:'Renta Fija Piso 20 - Torre Solari',building:'Torre Solari',floor:'20',apt:'',price:'850',currency:'USD',beds:2,baths:2,guests:4,images:'',description:'Departamento totalmente amoblado y equipado. Contrato m\u00ednimo 1 a\u00f1o. Vista panor\u00e1mica.',amenities:'Amoblado\nGimnasio\nCoworking\nSala de Cine\nJacuzzi\nSauna\n\u00c1reas comunales\nSeguridad 24h',checkin:'',checkout:'',wifiName:'',wifiPw:'',rules:'',welcome:'',phone:'',email:'',notes:'USD 850 mensuales incluye al\u00edcuota. Garant\u00eda: 2 meses.',parking:'',promoActive:false,promoPrice:'',carouselAuto:false,coverIndex:0},
+        {id:genId(),type:'venta',name:'Venta Piso 21 - Torre Solari',building:'Torre Solari',floor:'21',apt:'',price:'160000',currency:'USD',beds:2,baths:3,guests:4,images:'fotos/venta-p21/01.jpg, fotos/venta-p21/02.jpg, fotos/venta-p21/03.jpg, fotos/venta-p21/04.jpg, fotos/venta-p21/05.jpg, fotos/venta-p21/06.jpg, fotos/venta-p21/07.jpg, fotos/venta-p21/08.jpg',description:'75 m2, 2 dormitorios con ba\u00f1o privado, 1 ba\u00f1o social, cocina amplia, parqueadero, bodega.',amenities:'Vista panor\u00e1mica\nParqueadero\nBodega\nCuarto de m\u00e1quinas\nSeguridad 24h',checkin:'',checkout:'',wifiName:'',wifiPw:'',rules:'',welcome:'',phone:'',email:'',notes:'Precio: $160,000. Vista al Parque Metropolitano y nevados.',parking:'',promoActive:false,promoPrice:'',carouselAuto:false,coverIndex:0},
+        {id:genId(),type:'venta',name:'Suite Piso 15 - Torre Solari',building:'Torre Solari',floor:'15',apt:'',price:'118999',currency:'USD',beds:1,baths:2,guests:2,images:'',description:'Suite en piso 15. 50.62 m2, 1 dormitorio, 1 ba\u00f1o completo + medio ba\u00f1o, bodega.',amenities:'Vista a la 6 de Diciembre\nBodega\nCocina integrada\nSeguridad 24h',checkin:'',checkout:'',wifiName:'',wifiPw:'',rules:'',welcome:'',phone:'',email:'',notes:'$118,999 (negociable). No dispone de parqueadero.',parking:'',promoActive:false,promoPrice:'',carouselAuto:false,coverIndex:0},
     ];
     saveData();
     renderDashboard();
@@ -545,13 +549,17 @@ function renderProperties() {
         var imgs = parseImages(p.images);
         var coverImgs = imgs.filter(function(u) { return !isBanoPhoto(u); });
         if (coverImgs.length === 0) coverImgs = imgs;
+        // reorder so coverIndex is first
+        var ci = Math.min(p.coverIndex || 0, coverImgs.length - 1);
+        if (ci > 0) coverImgs = coverImgs.slice(ci).concat(coverImgs.slice(0, ci));
+        var autoAttr = p.carouselAuto ? ' data-auto="1"' : '';
         var priceLabel = p.type === 'fija' ? '/mes' : p.type === 'corta' ? '/noche' : '';
         var currencySymbol = p.currency === 'USD' ? 'US$' : p.currency === 'EUR' ? '\u20ac' : '$';
         var amenities = (p.amenities||'').split('\n').filter(function(a) { return a.trim(); }).slice(0,4);
         var hasMore = (p.amenities||'').split('\n').filter(function(a) { return a.trim(); }).length > 4;
         var defaultImg = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22800%22 height=%22500%22%3E%3Crect fill=%22%23EAE3D8%22 width=%22800%22 height=%22500%22/%3E%3Ctext x=%22400%22 y=%22250%22 text-anchor=%22middle%22 fill=%22%239A6A38%22 font-size=%2220%22 font-family=%22sans-serif%22%3ESin foto%3C/text%3E%3C/svg%3E';
         return '<div class="prop-card anim-fade-up delay-' + Math.min(i+1,6) + '">' +
-            '<div class="carousel-container">' +
+            '<div class="carousel-container"' + autoAttr + ' onmouseenter="carouselPause(this)" onmouseleave="carouselResume(this)">' +
             (coverImgs.length > 0 ? '<div class="carousel-track" data-index="0">' + coverImgs.map(function(u) { return '<img src="' + esc(u) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'; }).join('') + '</div>' + (coverImgs.length > 1 ? '<button class="carousel-btn prev" onclick="event.stopPropagation();carouselMove(this,\'prev\')"><i class="fa-solid fa-chevron-left"></i></button><button class="carousel-btn next" onclick="event.stopPropagation();carouselMove(this,\'next\')"><i class="fa-solid fa-chevron-right"></i></button><div class="carousel-dots">' + coverImgs.map(function(_,j) { return '<button class="carousel-dot' + (j===0?' active':'') + '" onclick="event.stopPropagation();carouselGo(this,'+j+')"></button>'; }).join('') + '</div>' : '') : '<img src="' + defaultImg + '" alt="" class="w-full h-full object-cover">') +
             '<span class="prop-badge ' + info.badge + '">' + info.badgeText + '</span></div>' +
             '<div class="p-5" style="min-height:250px;"><div><div class="flex items-start justify-between gap-2 mb-2">' +
@@ -577,6 +585,7 @@ function carouselMove(btn, dir) {
     track.dataset.index = idx;
     track.style.transform = 'translateX(-' + (idx * 100) + '%)';
     container.querySelectorAll('.carousel-dot').forEach(function(d, j) { d.classList.toggle('active', j === idx); });
+    carouselRestartTimer(container);
 }
 
 function carouselGo(dot, idx) {
@@ -585,6 +594,39 @@ function carouselGo(dot, idx) {
     track.dataset.index = idx;
     track.style.transform = 'translateX(-' + (idx * 100) + '%)';
     container.querySelectorAll('.carousel-dot').forEach(function(d, j) { d.classList.toggle('active', j === idx); });
+    carouselRestartTimer(container);
+}
+
+function carouselPause(container) {
+    var id = container.dataset.timerId;
+    if (id) { clearInterval(parseInt(id)); container.dataset.timerId = ''; }
+}
+
+function carouselResume(container) {
+    if (container.dataset.auto !== '1') return;
+    carouselPause(container);
+    var id = setInterval(function() {
+        var track = container.querySelector('.carousel-track');
+        if (!track) return;
+        var total = track.children.length;
+        var idx = (parseInt(track.dataset.index || 0) + 1) % total;
+        track.dataset.index = idx;
+        track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+        container.querySelectorAll('.carousel-dot').forEach(function(d, j) { d.classList.toggle('active', j === idx); });
+    }, 4500);
+    container.dataset.timerId = id;
+}
+
+function carouselRestartTimer(container) {
+    if (container.dataset.auto === '1') {
+        carouselPause(container);
+        carouselResume(container);
+    }
+}
+
+// Start auto carousels after page load
+function startAutoCarousels() {
+    document.querySelectorAll('.carousel-container[data-auto="1"]').forEach(function(c) { carouselResume(c); });
 }
 
 // ====== DETAIL ======
@@ -594,6 +636,8 @@ function viewDetail(id) {
     if (!p) return;
     detailCarouselIdx = 0;
     var imgs = parseImages(p.images);
+    var ci = Math.min(p.coverIndex || 0, imgs.length - 1);
+    if (ci > 0) imgs = imgs.slice(ci).concat(imgs.slice(0, ci));
     var currencySymbol = p.currency === 'USD' ? 'US$' : p.currency === 'EUR' ? '\u20ac' : '$';
     var priceLabel = p.type === 'fija' ? '/mes' : p.type === 'corta' ? '/noche' : '';
     var amenities = (p.amenities||'').split('\n').filter(function(a) { return a.trim(); });
@@ -725,6 +769,8 @@ function openPropertyForm(id) {
         document.getElementById('form-promo-price').value = p.promoPrice||'';
         document.getElementById('promo-price-field').style.display = p.promoActive ? 'block' : 'none';
         document.getElementById('form-parking').value = p.parking||'';
+        document.getElementById('form-cover-index').value = (p.coverIndex||0) + 1;
+        document.getElementById('form-carousel-auto').checked = !!p.carouselAuto;
         document.getElementById('form-beds').value = p.beds||1;
         document.getElementById('form-baths').value = p.baths||1;
         document.getElementById('form-guests').value = p.guests||2;
@@ -799,6 +845,8 @@ function handlePropertySubmit(e) {
         phone: document.getElementById('form-phone').value.trim(),
         email: document.getElementById('form-email').value.trim(),
         parking: document.getElementById('form-parking').value,
+        coverIndex: Math.max(0, (parseInt(document.getElementById('form-cover-index').value)||1) - 1),
+        carouselAuto: document.getElementById('form-carousel-auto').checked,
         promoActive: document.getElementById('form-promo-active').checked,
         promoPrice: document.getElementById('form-promo-price').value.trim(),
         notes: document.getElementById('form-notes').value.trim(),
@@ -814,6 +862,7 @@ function handlePropertySubmit(e) {
 }
 
 function renderDashboard() {
+    setTimeout(startAutoCarousels, 100);
     var info = tabInfo[activeTab];
     document.getElementById('tab-title').textContent = info.title;
     document.getElementById('tab-subtitle').textContent = info.subtitle;
