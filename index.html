@@ -455,28 +455,51 @@ function parseImages(str) {
 }
 function joinImages(arr) { return arr.join('|'); }
 
-function uploadImageToRepo(token, propId, file, cb) {
-    var name = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    var path = 'fotos/' + propId + '/' + name;
+function resizeImage(file, maxW, maxH, cb) {
+    if (file.size < 200000) { cb(file); return; }
     var reader = new FileReader();
     reader.onload = function(e) {
-        var base64 = e.target.result.split(',')[1];
-        var url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + path;
-        fetch(url, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' } })
-            .then(function(r) { return r.status === 404 ? {} : r.json(); })
-            .then(function(ex) {
-                var body = { message: 'Subir ' + name, content: base64, branch: GITHUB_BRANCH };
-                if (ex.sha) body.sha = ex.sha;
-                return fetch(url, {
-                    method: 'PUT',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json' },
-                    body: JSON.stringify(body)
-                });
-            })
-            .then(function(r) { cb(r.ok ? path : null); })
-            .catch(function() { cb(null); });
+        var img = new Image();
+        img.onload = function() {
+            var w = img.width, h = img.height;
+            if (w <= maxW && h <= maxH) { cb(file); return; }
+            if (w > maxW) { h = h * maxW / w; w = maxW; }
+            if (h > maxH) { w = w * maxH / h; h = maxH; }
+            var c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            c.getContext('2d').drawImage(img, 0, 0, w, h);
+            c.toBlob(function(b) { cb(new File([b], file.name, {type:'image/jpeg'})); }, 'image/jpeg', 0.82);
+        };
+        img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+}
+
+function uploadImageToRepo(token, propId, file, cb) {
+    resizeImage(file, 1600, 1200, function(compressed) {
+        var name = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        name = name.replace(/\.(png|webp|jpeg)$/i, '.jpg');
+        var path = 'fotos/' + propId + '/' + name;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var base64 = e.target.result.split(',')[1];
+            var url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + path;
+            fetch(url, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' } })
+                .then(function(r) { return r.status === 404 ? {} : r.json(); })
+                .then(function(ex) {
+                    var body = { message: 'Subir ' + name, content: base64, branch: GITHUB_BRANCH };
+                    if (ex.sha) body.sha = ex.sha;
+                    return fetch(url, {
+                        method: 'PUT',
+                        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json' },
+                        body: JSON.stringify(body)
+                    });
+                })
+                .then(function(r) { cb(r.ok ? path : null); })
+                .catch(function() { cb(null); });
+        };
+        reader.readAsDataURL(compressed);
+    });
 }
 
 // ====== GITHUB PUBLISH ======
@@ -487,7 +510,9 @@ function publishToGitHub(done) {
     if (!token) { publishBusy = false; if (done) done(false); return; }
     var ps = document.getElementById('publish-status');
     if (ps) { ps.className = 'publish-status publishing'; ps.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publicando...'; }
-    var payload = { properties: properties, settings: settings };
+    var publishSettings = {};
+    for (var k in settings) { if (settings.hasOwnProperty(k) && k !== '_token') publishSettings[k] = settings[k]; }
+    var payload = { properties: properties, settings: publishSettings };
     var jsonStr = JSON.stringify(payload, null, 2);
     if (jsonStr.length > 500000) { showToast('Los datos son muy grandes para GitHub (>500KB). Reduce el tama\u00f1o de las fotos.', 'error'); publishBusy = false; if (done) done(false); return; }
     var encoded = btoa(unescape(encodeURIComponent(jsonStr)));
@@ -514,9 +539,10 @@ function publishToGitHub(done) {
             publishBusy = false; if (done) done(true);
             if (publishPending) { publishPending = false; setTimeout(function() { publishToGitHub(done); }, 100); }
         })
-        .catch(function() {
+        .catch(function(e) {
             if (ps) { ps.className = 'publish-status error'; ps.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error al publicar'; }
-            showToast('Error al publicar en GitHub. Los datos est\u00e1n seguros localmente. Vuelve a intentar con Guardar.', 'error');
+            if (e && e.message && e.message.indexOf('409') !== -1) { showToast('GitHub rechaz\u00f3 el contenido (posible token expuesto). Revisa que el token no est\u00e9 en los datos.', 'error'); }
+            else { showToast('Error al publicar en GitHub. Los datos est\u00e1n seguros localmente. Vuelve a intentar con Guardar.', 'error'); }
             publishBusy = false; if (done) done(false);
             if (publishPending) { publishPending = false; setTimeout(function() { publishToGitHub(done); }, 100); }
         });
@@ -686,7 +712,7 @@ function viewDetail(id) {
     document.getElementById('detail-content').innerHTML =
         '<div class="relative overflow-hidden aspect-video bg-stone-200">' +
         '<div class="carousel-track" data-index="0" id="detail-carousel-track" style="height:100%;">' +
-        (imgs.length > 0 ? imgs.map(function(u) { return '<img src="' + esc(u) + '" alt="" class="w-full h-full object-cover" onerror="this.src=\'' + defaultImg + '\'">'; }).join('') : '<img src="' + defaultImg + '" alt="" class="w-full h-full object-cover">') + '</div>' +
+        (imgs.length > 0 ? imgs.map(function(u) { return '<img src="' + esc(u) + '" alt="" class="w-full h-full object-cover" loading="lazy" onerror="this.src=\'' + defaultImg + '\'">'; }).join('') : '<img src="' + defaultImg + '" alt="" class="w-full h-full object-cover">') + '</div>' +
         (imgs.length > 1 ? '<button class="carousel-btn prev" onclick="detailCarouselMove(-1)" style="opacity:1;"><i class="fa-solid fa-chevron-left"></i></button><button class="carousel-btn next" onclick="detailCarouselMove(1)" style="opacity:1;"><i class="fa-solid fa-chevron-right"></i></button>' : '') +
         '<span class="prop-badge ' + info.badge + '">' + info.badgeText + '</span></div>' +
         '<div class="p-6 space-y-6"><div><div class="flex items-start justify-between gap-3 mb-1">' +
