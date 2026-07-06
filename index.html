@@ -408,7 +408,8 @@ function loadData() {
 
 function fetchDataFromServer() {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', DATA_FILE + '?t=' + Date.now(), true);
+    var url = 'https://raw.githubusercontent.com/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/main/' + DATA_FILE + '?t=' + Date.now();
+    xhr.open('GET', url, true);
     xhr.onload = function() {
         if (xhr.status >= 200 && xhr.status < 300) {
             try {
