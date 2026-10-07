@@ -742,7 +742,7 @@
       "welcome": "",
       "phone": "",
       "email": "",
-      "parking": "",
+      "parking": "1 parqueadero",
       "coverIndex": 0,
       "carouselAuto": false,
       "promoActive": false,
